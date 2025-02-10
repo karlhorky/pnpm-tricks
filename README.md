@@ -57,7 +57,7 @@ $ echo $?
 To always fail with exit code `1` on pnpm v10 ignored build scripts, loop over each line in the `pnpm install` output and run `false` if the `Ignored build scripts:` message is found:
 
 ```bash
-$ pnpm install | while IFS= read -r line; do echo "$line"; echo "$line" | grep -q 'Ignored build scripts:' && false; done
+$ pnpm install | { ret=0; while IFS= read -r line; do echo "$line"; [[ "$line" == *"Ignored build scripts:"* ]] && ret=1; done; [[ $ret -eq 0 ]]; }
 
 ...
 
@@ -76,7 +76,7 @@ On GitHub Actions:
 ```yml
       - name: Install dependencies, failing on ignored build scripts
         # Fail on pnpm v10 ignored build scripts
-        run: pnpm install | while IFS= read -r line; do echo "$line"; echo "$line" | grep -q 'Ignored build scripts:' && false; done
+        run: pnpm install | { ret=0; while IFS= read -r line; do echo "$line"; [[ "$line" == *"Ignored build scripts:"* ]] && ret=1; done; [[ $ret -eq 0 ]]; }
 
         # TODO: Switch to future `pnpm install` option to fail on pnpm v10 ignored build scripts, if accepted:
         # - https://github.com/pnpm/pnpm/issues/9032#issuecomment-2647428724
