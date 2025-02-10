@@ -54,7 +54,7 @@ $ echo $?
 0
 ```
 
-To always fail with exit code `1` on pnpm v10 ignored build scripts, loop over each line in the `pnpm install` output and set a variable to `true` and exit with code `1` if `Ignored build scripts:` message is found:
+To always fail with exit code `1` on pnpm v10 ignored build scripts, loop over each line in the `pnpm install` output to look for the `Ignored build scripts:` message. If the message is found, set a variable to `true` and exit with code `1`:
 
 ```bash
 $ pnpm install | { has_ignored_build_scripts=false; while IFS= read -r line; do echo "$line"; [[ "$line" == *"Ignored build scripts:"* ]] && has_ignored_build_scripts=true; done; [[ "$has_ignored_build_scripts" = false ]]; }
