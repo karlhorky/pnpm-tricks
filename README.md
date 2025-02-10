@@ -71,7 +71,7 @@ $ echo $?
 
 On GitHub Actions:
 
-`.github/workflows/ci.yml'
+`.github/workflows/ci.yml`
 
 ```yml
       - name: Install dependencies, failing on ignored build scripts
