@@ -77,6 +77,7 @@ On GitHub Actions:
       - name: Install dependencies, failing on ignored build scripts
         # Fail on pnpm v10 ignored build scripts
         run: pnpm install | { has_ignored_build_scripts=false; while IFS= read -r line; do echo "$line"; [[ "$line" == *"Ignored build scripts:"* ]] && has_ignored_build_scripts=true; done; [[ "$has_ignored_build_scripts" = false ]]; }
+        shell: bash # Use Git Bash on Windows for command group above
 
         # TODO: Switch to future `pnpm install` option to fail on pnpm v10 ignored build scripts, if accepted:
         # - https://github.com/pnpm/pnpm/issues/9032#issuecomment-2647428724
