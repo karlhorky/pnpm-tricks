@@ -4,6 +4,8 @@ A collection of useful tricks for pnpm
 
 ## Fail `pnpm install` on pnpm v10 ignored build scripts
 
+**Update:** Use [the `strict-dep-builds` setting](https://github.com/pnpm/pnpm/pull/9071#issuecomment-2650192097) introduced in [pnpm v10.3.0](https://github.com/pnpm/pnpm/releases/tag/v10.3.0)
+
 [pnpm v10 blocks lifecycle scripts by default](https://socket.dev/blog/pnpm-10-0-0-blocks-lifecycle-scripts-by-default), which means that dependencies with build scripts in lifecycle scripts such as [`esbuild`](https://www.npmjs.com/package/esbuild), [`sharp`](https://www.npmjs.com/package/sharp) and [`bcrypt`](https://www.npmjs.com/package/bcrypt) will no longer be built by default - instead they display a `Ignored build scripts:` warning at the bottom of the `pnpm install` output:
 
 ```bash
