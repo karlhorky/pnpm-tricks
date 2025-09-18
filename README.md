@@ -2,6 +2,10 @@
 
 A collection of useful tricks for pnpm
 
+## Configure `minimumReleaseAge` and `minimumReleaseAgeExclude` globally
+
+Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-global-cross-platform
+
 ## Fail `pnpm install` on pnpm v10 ignored build scripts
 
 **Update:** Failing on ignored build scripts is now built into pnpm! 🎉 Use [the `strict-dep-builds` setting](https://github.com/pnpm/pnpm/pull/9071#issuecomment-2650192097) (default `false`) introduced in [pnpm v10.3.0](https://github.com/pnpm/pnpm/releases/tag/v10.3.0)
