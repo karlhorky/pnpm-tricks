@@ -4,6 +4,28 @@ A collection of useful tricks for pnpm
 
 ## Configure `minimumReleaseAge` and `minimumReleaseAgeExclude` globally
 
+Caveat: @zkochan [suggests](https://github.com/pnpm/pnpm/issues/9921#issuecomment-3292521911) considering [Config Dependencies](https://pnpm.io/config-dependencies) instead of global configuration
+
+To configure pnpm [`minimumReleaseAge`](https://pnpm.io/settings#minimumreleaseage) globally, use `pnpm config set` commands:
+
+```bash
+# minimumReleaseAge of 7 days
+pnpm config set minimumReleaseAge 10080 --global
+```
+
+[`minimumReleaseAgeExclude`](https://pnpm.io/settings#minimumreleaseageexclude) is a bit more complicated to configure globally, because pnpm does not allow setting complex values like arrays using `pnpm config set`. In this case, use Perl commands with platform-specific global configuration file paths to set `minimumReleaseAgeExclude` globally (these work only once the global config files exist):
+
+```bash
+# Windows
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$LOCALAPPDATA/pnpm/config/rc"
+
+# macOS
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/Library/Preferences/pnpm/rc"
+
+# Linux
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/.config/pnpm/rc"
+```
+
 Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-global-cross-platform
 
 ## Fail `pnpm install` on pnpm v10 ignored build scripts
