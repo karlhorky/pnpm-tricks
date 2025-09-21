@@ -17,13 +17,13 @@ pnpm config set minimumReleaseAge 10080 --global
 
 ```bash
 # Windows
-perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$LOCALAPPDATA/pnpm/config/rc"
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$LOCALAPPDATA/pnpm/config/rc"
 
 # macOS
-perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/Library/Preferences/pnpm/rc"
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/Library/Preferences/pnpm/rc"
 
 # Linux
-perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack\r?$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/.config/pnpm/rc"
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=webpack$/; $_ .= "minimum-release-age-exclude[]=webpack\n" if eof && !$exists' "$HOME/.config/pnpm/rc"
 ```
 
 Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-global-cross-platform
