@@ -37,8 +37,7 @@ To convert existing `patch-package` patches to pnpm patches, copy them and remov
 ```ts
 #!/usr/bin/env -S node
 
-/* eslint-disable no-console -- Allow console logging in script
- */
+/* eslint-disable no-console -- Allow console logging in script */
 
 // https://github.com/karlhorky/pnpm-tricks#convert-patch-package-patches-to-pnpm-patches
 
