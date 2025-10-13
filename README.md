@@ -30,169 +30,132 @@ Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-g
 
 ## Convert `patch-package` patches to pnpm patches
 
-To convert existing `patch-package` patches in `patches/` to [versionless pnpm patches](https://github.com/pnpm/pnpm/issues/5686#issuecomment-2262917961) in the same directory, try the following script:
+To convert existing `patch-package` patches in `patches/` to [versionless pnpm patches](https://github.com/pnpm/pnpm/issues/5686#issuecomment-2262917961) in the same directory, try the following script (requires Node.js 22.18.0+):
 
-`scripts/patch-package_to_pnpm.sh`
+`scripts/patch-package-to-pnpm.ts`
 
-```bash
-#!/usr/bin/env bash
+```ts
+#!/usr/bin/env -S node
 
-set -o errexit
-set -o nounset
-set -o pipefail
+/* eslint-disable no-console -- Allow console logging in script
+ */
 
-root_dir=$(pwd)
-patches_dir="${root_dir}/patches"
-store_dir="${root_dir}/node_modules/.pnpm"
+// https://github.com/karlhorky/pnpm-tricks#convert-patch-package-patches-to-pnpm-patches
 
-# Required tools
-for cmd in git rsync node; do
-  if ! command -v "${cmd}" >/dev/null 2>&1; then
-    echo "Error: required command '${cmd}' not found on PATH" >&2
-    exit 1
-  fi
-done
+/**
+ * Convert patch-package diffs to pnpm-native diffs by:
+ *
+ * 1. Strip "node_modules/<pkg>/" prefixes from both a/ and b/
+ *    paths
+ * 2. Write a versionless patch file:
+ *    patches/<@scope__name>.patch
+ * 3. Remove parent packages
+ * 4. Update package.json -> pnpm.patchedDependencies with a
+ *    versionless key
+ *
+ * Original patch file not deleted, to allow for comparison.
+ */
 
-mapfile -t patch_files < <(find "${patches_dir}" -maxdepth 1 -type f -name '*+*.patch' | sort)
+import { glob, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
-if [[ ${#patch_files[@]} -eq 0 ]]; then
-  echo "No patch-package patches found in ${patches_dir}."
-  exit 0
-fi
+const rootDir = process.cwd();
+const patchesDir = path.join(rootDir, 'patches');
+const packageJsonPath = path.join(rootDir, 'package.json');
 
-for patch_file in "${patch_files[@]}"; do
-  base=$(basename "${patch_file}" .patch)
-  version="${base##*+}"
-  encoded="${base%+${version}}"
-  if [[ -z "${encoded}" || -z "${version}" ]]; then
-    echo "Skipping ${patch_file}: unable to parse name." >&2
-    continue
-  fi
+const patchPackagePatchPaths = await Array.fromAsync<string, string>(
+  glob('*+*.patch', { cwd: patchesDir, withFileTypes: false }),
+  (file) => path.join(patchesDir, file),
+);
+patchPackagePatchPaths.sort();
 
-  target_encoded="${encoded}"
-  if [[ "${target_encoded}" == *"++"* ]]; then
-    target_encoded="${target_encoded##*++}"
-  fi
-
-  target_package="${target_encoded//+/\/}"
-
-  echo "Converting ${patch_file} -> ${target_package}"
-
-  target_dir=""
-
-  # 1) Prefer the real path behind node_modules/<pkg> if available
-  if [[ -e "${root_dir}/node_modules/${target_package}" ]]; then
-    if command -v realpath >/dev/null 2>&1; then
-      rp="$(realpath "${root_dir}/node_modules/${target_package}" 2>/dev/null || true)"
-    else
-      rp=""
-    fi
-    if [[ -n "${rp}" && -f "${rp}/package.json" ]]; then
-      target_dir="${rp}"
-    fi
-  fi
-
-  # 2) Exact match inside the virtual store
-  if [[ -z "${target_dir}" && -d "${store_dir}" ]]; then
-    candidate=$(find "${store_dir}" -maxdepth 1 -type d -name "${target_encoded}@${version}*" | head -n 1 || true)
-    if [[ -n "${candidate}" && -d "${candidate}/node_modules/${target_package}" ]]; then
-      target_dir="${candidate}/node_modules/${target_package}"
-    fi
-  fi
-
-  # 3) Any installed version in the virtual store
-  if [[ -z "${target_dir}" && -d "${store_dir}" ]]; then
-    candidate=$(find "${store_dir}" -maxdepth 1 -type d -name "${target_encoded}@*" | head -n 1 || true)
-    if [[ -n "${candidate}" && -d "${candidate}/node_modules/${target_package}" ]]; then
-      target_dir="${candidate}/node_modules/${target_package}"
-    fi
-  fi
-
-  # 4) Last resort: scan workspace for package.json
-  if [[ -z "${target_dir}" ]]; then
-    while IFS= read -r pkg_json; do
-      name=$(node --input-type=module -e 'import fs from "node:fs"; const p=process.argv[1]; try{const d=JSON.parse(fs.readFileSync(p,"utf8")); process.stdout.write(d.name||"");}catch{}' "${pkg_json}" 2>/dev/null || true)
-      if [[ "${name}" == "${target_package}" ]]; then
-        target_dir=$(dirname "${pkg_json}")
-        break
-      fi
-    done < <(find "${root_dir}" -maxdepth 4 -name package.json 2>/dev/null)
-  fi
-
-  if [[ -z "${target_dir}" ]]; then
-    echo "  Unable to locate ${target_package} (filename version ${version}); skipping." >&2
-    continue
-  fi
-
-  tmp_dir=$(mktemp -d "${root_dir}/.tmp-pnpm-patch.XXXXXX")
-  rsync --archive --delete "${target_dir}/" "${tmp_dir}/"
-
-  (cd "${tmp_dir}" && git init --initial-branch=main >/dev/null)
-  (cd "${tmp_dir}" && git config user.email "patch@upleveled.io" >/dev/null)
-  (cd "${tmp_dir}" && git config user.name "pnpm patch converter" >/dev/null)
-  (cd "${tmp_dir}" && git add --all >/dev/null)
-  (cd "${tmp_dir}" && git commit --message "baseline" >/dev/null)
-
-  applied=0
-  for strip in 0 1 2 3 4 5 6 7; do
-    if (cd "${tmp_dir}" && git apply --check -p"${strip}" "${patch_file}" >/dev/null 2>&1); then
-      (cd "${tmp_dir}" && git apply -p"${strip}" "${patch_file}")
-      applied=1
-      break
-    fi
-    if (cd "${tmp_dir}" && git apply --reverse --check -p"${strip}" "${patch_file}" >/dev/null 2>&1); then
-      (cd "${tmp_dir}" && git apply --reverse -p"${strip}" "${patch_file}")
-      (cd "${tmp_dir}" && git add --all >/dev/null)
-      (cd "${tmp_dir}" && git commit --amend --no-edit >/dev/null)
-      if (cd "${tmp_dir}" && git apply --check -p"${strip}" "${patch_file}" >/dev/null 2>&1); then
-        (cd "${tmp_dir}" && git apply -p"${strip}" "${patch_file}")
-        applied=1
-        break
-      fi
-    fi
-  done
-
-  if [[ "${applied}" -eq 0 ]]; then
-    echo "  Failed to apply ${patch_file}" >&2
-    rm -rf "${tmp_dir}"
-    continue
-  fi
-
-  diff_output=$(cd "${tmp_dir}" && git diff)
-  if [[ -z "${diff_output}" ]]; then
-    echo "  ${patch_file} produced no changes; skipping output." >&2
-    rm -rf "${tmp_dir}"
-    continue
-  fi
-
-  sanitized="${target_encoded//+/__}"
-  new_patch_path="patches/${sanitized}.patch"
-  printf '%s' "${diff_output}" > "${root_dir}/${new_patch_path}"
-
-  node --input-type=module - "${root_dir}/package.json" "${target_package}" "${new_patch_path}" <<'NODE'
-import fs from 'node:fs';
-const [pkgPath, dep, patchPath] = process.argv.slice(2);
-const data = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-data.pnpm ??= {};
-data.pnpm.patchedDependencies ??= {};
-for (const k of Object.keys(data.pnpm.patchedDependencies)) {
-  if (k === dep || k.startsWith(`${dep}@`)) delete data.pnpm.patchedDependencies[k];
+if (patchPackagePatchPaths.length === 0) {
+  console.log(`No patch-package patches found in ${patchesDir}.`);
+  process.exit(1);
 }
-data.pnpm.patchedDependencies[dep] = patchPath;
-fs.writeFileSync(pkgPath, JSON.stringify(data, null, 2) + '\n');
-NODE
 
-  rm -rf "${tmp_dir}"
-done
+const packageJsonContent = JSON.parse(
+  await readFile(packageJsonPath, 'utf8'),
+) as {
+  pnpm?: { patchedDependencies?: Record<string, string> };
+};
+packageJsonContent.pnpm ??= {};
+packageJsonContent.pnpm.patchedDependencies ??= {};
 
-echo "All patch-package patches processed (versionless). Run 'pnpm install' to apply."
+for (const patchPackagePatchPath of patchPackagePatchPaths) {
+  const patchPackagePatchFilename = path.basename(
+    patchPackagePatchPath,
+    '.patch',
+  );
+
+  const encodedPackageNameMatch =
+    /^(?:(?<patchPackageParentPackageName>[^+]+(?:\+[^+]+)*)\+\+)?(?<patchPackageLeafPackageName>[^+]+(?:\+[^+]+)*)\+[^+]+$/.exec(
+      patchPackagePatchFilename,
+    );
+  if (!encodedPackageNameMatch?.groups) {
+    console.error(
+      `Skipping ${patchPackagePatchPath}: cannot parse "<encoded>+<version>"`,
+    );
+    continue;
+  }
+
+  const { patchPackageParentPackageName, patchPackageLeafPackageName } =
+    encodedPackageNameMatch.groups as {
+      patchPackageParentPackageName?: string;
+      patchPackageLeafPackageName: string;
+    };
+
+  const patchPackagePatchContent = await readFile(
+    patchPackagePatchPath,
+    'utf8',
+  );
+
+  // @scope+name -> @scope/name
+  const parentPackageName = patchPackageParentPackageName
+    ? patchPackageParentPackageName.replaceAll('+', '/')
+    : undefined;
+  const leafPackageName = patchPackageLeafPackageName.replaceAll('+', '/');
+
+  const nodeModulesPathPrefix = (
+    parentPackageName ? [parentPackageName, leafPackageName] : [leafPackageName]
+  )
+    .map((segment) => `node_modules/${segment}`)
+    .join('/');
+
+  const pnpmPatchContent = patchPackagePatchContent
+    .replaceAll(`a/${nodeModulesPathPrefix}/`, 'a/')
+    .replaceAll(`b/${nodeModulesPathPrefix}/`, 'b/');
+
+  // @scope+name -> @scope__name
+  const pnpmPatchPath = path.join(
+    patchesDir,
+    `${patchPackageLeafPackageName.replaceAll('+', '__')}.patch`,
+  );
+  await writeFile(pnpmPatchPath, pnpmPatchContent);
+
+  packageJsonContent.pnpm.patchedDependencies[leafPackageName] = path
+    .relative(rootDir, pnpmPatchPath)
+    .replaceAll('\\', '/');
+
+  console.log(
+    `Converted ${path.relative(rootDir, patchPackagePatchPath)} -> ${leafPackageName}`,
+  );
+}
+
+await writeFile(
+  packageJsonPath,
+  JSON.stringify(packageJsonContent, null, 2) + '\n',
+);
+console.log(
+  "All patches converted to versionless pnpm patches. Run 'pnpm install' to apply.",
+);
 ```
 
 Make the script executable and run it from the project root:
 
 ```bash
-chmod +x scripts/patch-package_to_pnpm.sh
-./scripts/patch-package_to_pnpm.sh
+chmod +x scripts/patch-package-to-pnpm.ts
+./scripts/patch-package-to-pnpm.ts
 ```
 
 Example output:
