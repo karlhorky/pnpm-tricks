@@ -46,10 +46,9 @@ To convert existing `patch-package` patches to pnpm patches, copy them and remov
  *
  * 1. Strip "node_modules/<pkg>/" prefixes from both a/ and b/
  *    paths
- * 2. Write a versionless patch file:
- *    patches/<@scope__name>.patch
- * 3. Remove parent packages
- * 4. Update pnpm.patchedDependencies in package.json with a
+ * 2. Write a versionless patch file, removing references to
+ *    parent packages: patches/<@scope__name>.patch
+ * 3. Update pnpm.patchedDependencies in package.json with a
  *    versionless key
  *
  * Original patch file not deleted, to allow for comparison.
