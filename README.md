@@ -30,7 +30,7 @@ Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-g
 
 ## Convert `patch-package` patches to pnpm patches
 
-To convert existing `patch-package` patches in `patches/` to [versionless patches from pnpm 9.7+](https://github.com/pnpm/pnpm/releases/tag/v9.7.0#:~:text=Added%20the%20ability%20to%20apply%20patch%20to%20all%20versions) in the same directory, try the following script (requires Node.js 22.18.0+):
+To convert existing `patch-package` patches to pnpm patches, copy them and remove the `node_modules` prefixes in the patches, as in the following script (requires Node.js 22.18.0+):
 
 `scripts/patch-package-to-pnpm.ts`
 
@@ -157,6 +157,8 @@ Make the script executable and run it from the project root:
 chmod +x scripts/patch-package-to-pnpm.ts
 ./scripts/patch-package-to-pnpm.ts
 ```
+
+The script will convert `patch-package` patches in `patches/` to [pnpm versionless patches (pnpm 9.7+)](https://github.com/pnpm/pnpm/releases/tag/v9.7.0#:~:text=Added%20the%20ability%20to%20apply%20patch%20to%20all%20versions) in the same directory, leaving the `patch-package` patches in place for your review of the conversion.
 
 Example output:
 
