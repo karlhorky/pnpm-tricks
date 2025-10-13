@@ -30,7 +30,7 @@ Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-g
 
 ## Convert `patch-package` patches to pnpm patches
 
-To convert existing `patch-package` patches in `patches/` to versionless pnpm patches in the same directory, try the following script:
+To convert existing `patch-package` patches in `patches/` to [versionless pnpm patches](https://github.com/pnpm/pnpm/issues/5686#issuecomment-2262917961) in the same directory, try the following script:
 
 `scripts/patch-package_to_pnpm.sh`
 
