@@ -197,6 +197,8 @@ chmod +x scripts/patch-package_to_pnpm.sh
 
 Example output:
 
+![Screenshot of VS Code with 2 panes open - the left pane showing a patch-package patch and the right pane showing a pnpm patch, the only difference being an extra `node_modules/<package name>` in the patched file](https://github.com/user-attachments/assets/fee51099-5e76-4478-88be-35d0c07e92d5)
+
 ## Fail `pnpm install` on pnpm v10 ignored build scripts
 
 **Update:** Failing on ignored build scripts is now built into pnpm! 🎉 Use [the `strict-dep-builds` setting](https://github.com/pnpm/pnpm/pull/9071#issuecomment-2650192097) (default `false`) introduced in [pnpm v10.3.0](https://github.com/pnpm/pnpm/releases/tag/v10.3.0)
