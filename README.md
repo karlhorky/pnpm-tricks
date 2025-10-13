@@ -49,7 +49,7 @@ To convert existing `patch-package` patches to pnpm patches, copy them and remov
  * 2. Write a versionless patch file:
  *    patches/<@scope__name>.patch
  * 3. Remove parent packages
- * 4. Update package.json -> pnpm.patchedDependencies with a
+ * 4. Update pnpm.patchedDependencies in package.json with a
  *    versionless key
  *
  * Original patch file not deleted, to allow for comparison.
