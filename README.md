@@ -42,7 +42,7 @@ To convert existing `patch-package` patches to pnpm patches, copy them and remov
 // https://github.com/karlhorky/pnpm-tricks#convert-patch-package-patches-to-pnpm-patches
 
 /**
- * Convert patch-package diffs to pnpm-native diffs by:
+ * Convert patch-package patches to pnpm-native patches by:
  *
  * 1. Strip "node_modules/<pkg>/" prefixes from both a/ and b/
  *    paths
