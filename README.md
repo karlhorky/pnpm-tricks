@@ -30,7 +30,13 @@ Reproduction: https://github.com/karlhorky/repro-pnpm-minimumReleaseAgeExclude-g
 
 ## Convert `patch-package` patches to pnpm patches
 
-To convert existing `patch-package` patches to pnpm patches, copy them and remove the `node_modules` prefixes in the patches, as in the following script (requires Node.js 22.18.0+):
+To convert existing `patch-package` patches to pnpm patches, use [the pnpm codemod](https://github.com/pnpm/codemod/blob/main/patch/README.md):
+
+```bash
+pnpx codemod pnpm/patch-convert
+```
+
+Alternatively, this can also be done with a script: copy them and remove the `node_modules` prefixes in the patches, as in the following script (requires Node.js 22.18.0+):
 
 `scripts/patch-package-to-pnpm.ts`
 
